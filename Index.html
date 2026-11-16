@@ -1,13 +1,220 @@
 <!DOCTYPE html>
+<html lang="en">
 <head>
-
-
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TimeCapsule — Digital Memory Museum</title>
+  <!-- Google Fonts for Editorial Nostalgic Aesthetic -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Top Museum Navigation -->
+  <header class="museum-header">
+    <div class="header-inner">
+      <a href="#" class="brand" onclick="switchView('vault'); return false;">
+        <span class="brand-emblem">🕰️</span>
+        <div>
+          <span class="brand-title">TimeCapsule</span>
+          <span class="brand-sub">Digital Memory Museum</span>
+        </div>
+      </a>
 
+      <nav class="nav-tabs" aria-label="Primary Navigation">
+        <button class="nav-btn active" id="tab-vault" onclick="switchView('vault')">
+          <span>🏛️</span> The Vault
+        </button>
+        <button class="nav-btn" id="tab-create" onclick="switchView('create')">
+          <span>✨</span> Seal a Capsule
+        </button>
+      </nav>
 
+      <div class="header-actions">
+        <button class="icon-btn" onclick="exportVaultJSON()" title="Download JSON Backup">
+          💾 Export Backup
+        </button>
+        <label class="icon-btn" title="Restore JSON Backup">
+          📂 Import
+          <input type="file" id="import-json-input" accept=".json" hidden onchange="importVaultJSON(event)" />
+        </label>
+      </div>
+    </div>
+  </header>
 
+  <main class="container">
+    <!-- Hero Banner -->
+    <section class="hero-banner">
+      <div class="hero-badge">✦ ARCHIVAL COLLECTION • EST. 2026 ✦</div>
+      <h1>Preserve the fleeting moments of today for the person you’ll become tomorrow.</h1>
+      <p>
+        Curate Polaroid keepsakes, write handwritten letters to your future self, and lock them away until the exact date they are meant to be rediscovered.
+      </p>
+      <div class="hero-cta-group">
+        <button class="btn-primary" onclick="switchView('create')">
+          <span>💌</span> Create New Memory Capsule
+        </button>
+        <button class="btn-secondary" onclick="document.getElementById('vault-section').scrollIntoView({behavior: 'smooth'})">
+          Explore Archived Exhibits ↓
+        </button>
+      </div>
+    </section>
 
+    <!-- VIEW 1: THE VAULT (GALLERY) -->
+    <section id="view-vault" class="view-section active">
+      <div id="vault-section" class="vault-toolbar">
+        <div class="filter-pills">
+          <button class="pill active" data-filter="all" onclick="setFilter('all', this)">
+            All Exhibits (<span id="count-all">0</span>)
+          </button>
+          <button class="pill" data-filter="ready" onclick="setFilter('ready', this)">
+            ✨ Ready to Unseal (<span id="count-ready">0</span>)
+          </button>
+          <button class="pill" data-filter="sealed" onclick="setFilter('sealed', this)">
+            🔒 Time-Locked (<span id="count-sealed">0</span>)
+          </button>
+          <button class="pill" data-filter="opened" onclick="setFilter('opened', this)">
+            📖 Opened (<span id="count-opened">0</span>)
+          </button>
+        </div>
+
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" id="search-input" placeholder="Search memories, tags, or titles..." oninput="renderVault()" />
+        </div>
+      </div>
+
+      <!-- Capsules Grid -->
+      <div id="capsules-grid" class="capsules-grid"></div>
+    </section>
+
+    <!-- VIEW 2: CREATE & SEAL CAPSULE -->
+    <section id="view-create" class="view-section">
+      <div class="creator-layout">
+        <!-- Left Column: Form Controls -->
+        <form id="capsule-form" class="creator-card" onsubmit="handleCreateCapsule(event)">
+          <div class="card-header">
+            <span class="step-tag">CURATOR'S DESK</span>
+            <h2>Seal a New Memory Capsule</h2>
+            <p>Fill out your exhibit details, attach a photo keepsake, and choose an unlock date.</p>
+          </div>
+
+          <div class="form-group">
+            <label for="cap-title">Capsule Title *</label>
+            <input type="text" id="cap-title" required placeholder="e.g., Finals Week Midnight Coffee & Dreams" oninput="updateLivePreview()" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="cap-author">Curator Name</label>
+              <input type="text" id="cap-author" placeholder="Your name (e.g., Maya)" oninput="updateLivePreview()" />
+            </div>
+            <div class="form-group">
+              <label for="cap-mood">Mood / Era Stamp</label>
+              <select id="cap-mood" onchange="updateLivePreview()">
+                <option value="🌸 Nostalgic & Soft">🌸 Nostalgic & Soft</option>
+                <option value="🎓 University Milestone">🎓 University Milestone</option>
+                <option value="✨ Hopeful & Ambitious">✨ Hopeful & Ambitious</option>
+                <option value="🍂 Late Night Reflections">🍂 Late Night Reflections</option>
+                <option value="✈️ Adventure & Wanderlust">✈️ Adventure & Wanderlust</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Photo Upload + Aesthetic Preset Picker -->
+          <div class="form-group">
+            <label>📸 Polaroid Keepsake Photo</label>
+            <div class="photo-controls">
+              <label class="upload-dropzone">
+                <input type="file" id="cap-photo" accept="image/*" hidden onchange="handlePhotoUpload(event)" />
+                <span>📷 Upload a Photo from Device</span>
+              </label>
+              <span class="or-divider">or choose a museum postcard:</span>
+              <div class="preset-thumbs">
+                <button type="button" class="preset-btn" onclick="selectPresetImage('campus')">🏛️ Campus</button>
+                <button type="button" class="preset-btn" onclick="selectPresetImage('coffee')">☕ Café</button>
+                <button type="button" class="preset-btn" onclick="selectPresetImage('sunset')">🌅 Sunset</button>
+                <button type="button" class="preset-btn" onclick="selectPresetImage('books')">📚 Library</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="cap-caption">Polaroid Handwritten Caption</label>
+            <input type="text" id="cap-caption" maxlength="65" placeholder="Written in ink at the bottom of your photo..." oninput="updateLivePreview()" />
+          </div>
+
+          <!-- Letter to Future Self -->
+          <div class="form-group">
+            <div class="label-with-action">
+              <label for="cap-letter">💌 Letter to Your Future Self *</label>
+              <button type="button" class="prompt-chip" onclick="insertWritingPrompt()">✨ Inspire Me</button>
+            </div>
+            <textarea id="cap-letter" rows="6" required placeholder="Dear Future Me, right now I am sitting at my desk wondering where life will take us..." oninput="updateLivePreview()"></textarea>
+          </div>
+
+          <!-- Unlock Date & Quick Presets -->
+          <div class="form-group">
+            <label for="cap-unlock-date">📅 Unlock Date & Time *</label>
+            <div class="quick-dates">
+              <button type="button" class="date-chip" onclick="setQuickDate('now')">🔓 Unlock Now</button>
+              <button type="button" class="date-chip" onclick="setQuickDate('1min')">⏱️ 1-Min Demo</button>
+              <button type="button" class="date-chip" onclick="setQuickDate('6months')">🗓️ +6 Months</button>
+              <button type="button" class="date-chip" onclick="setQuickDate('1year')">🎂 +1 Year</button>
+              <button type="button" class="date-chip" onclick="setQuickDate('graduation')">🎓 Graduation (2028)</button>
+            </div>
+            <input type="datetime-local" id="cap-unlock-date" required onchange="updateLivePreview()" />
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" onclick="switchView('vault')">Cancel</button>
+            <button type="submit" class="btn-primary">
+              <span>🕯️</span> Wax-Seal & Archive Capsule
+            </button>
+          </div>
+        </form>
+
+        <!-- Right Column: Live Polaroid & Envelope Preview -->
+        <aside class="preview-column">
+          <div class="preview-sticky">
+            <span class="step-tag">LIVE EXHIBIT PREVIEW</span>
+            <div class="polaroid-preview">
+              <div class="polaroid-tape"></div>
+              <div class="polaroid-frame">
+                <img id="preview-img" src="" alt="Memory preview" />
+              </div>
+              <p id="preview-caption" class="handwritten-caption">Autumn afternoon, 2026...</p>
+            </div>
+
+            <div class="letter-preview-card">
+              <div class="wax-seal">🕯️</div>
+              <span class="preview-stamp" id="preview-mood">🌸 Nostalgic & Soft</span>
+              <h3 id="preview-title">Untitled Memory Capsule</h3>
+              <p class="preview-meta" id="preview-date-label">Unlocks on: Select a date</p>
+              <p class="preview-excerpt" id="preview-letter">Your letter to your future self will appear here once unsealed...</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: UNSEAL & READ CAPSULE -->
+  <div id="capsule-modal" class="modal-backdrop" onclick="closeModalOnBackdrop(event)">
+    <div class="modal-paper">
+      <button class="modal-close" onclick="closeModal()" aria-label="Close modal">✕</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <footer class="museum-footer">
+    <p>🕰️ <strong>TimeCapsule — Digital Memory Museum</strong> • Saved locally in your browser vault</p>
+  </footer>
+
+  <script src="script.js"></script>
 </body>
 </html>
